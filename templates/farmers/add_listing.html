@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Add Listing{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-plus"></i>
+    <h1>Add Produce Listing</h1>
+    <p>List your produce for buyers to find</p>
+  </div>
+</section>
+
+<div class="card">
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('farmer.add_listing') }}" class="ajax-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Crop Name <span class="req">*</span></label>
+          <input type="text" name="cropName" placeholder="e.g. Maize" required>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category">
+            <option value="">Select Category</option>
+            <option value="Vegetables">Vegetables</option>
+            <option value="Fruits">Fruits</option>
+            <option value="Grains">Grains</option>
+            <option value="Tubers">Tubers</option>
+            <option value="Legumes">Legumes</option>
+            <option value="Herbs & Spices">Herbs & Spices</option>
+            <option value="Cash Crops">Cash Crops</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" name="quantity" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" name="unit" placeholder="kg, bags, crates">
+        </div>
+        <div class="form-group">
+          <label>Price per Unit</label>
+          <input type="number" name="pricePerUnit" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Harvest Date</label>
+          <input type="date" name="harvestDate">
+        </div>
+        <div class="form-group">
+          <label>Expiry Date</label>
+          <input type="date" name="expiryDate">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description" rows="3" placeholder="Describe your produce..."></textarea>
+        </div>
+      </div>
+      <div class="modal-actions" style="border-top:none; background:transparent; padding-top:0;">
+        <a href="{{ url_for('farmer.listings') }}" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save Listing</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
