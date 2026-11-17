@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Login | Farm Linker{% endblock %}
+
+{% block page_actions %}
+  <div class="page-actions">
+    <a href="{{ url_for('auth.register') }}" class="btn btn-outline btn-sm"><i class="fas fa-user-plus"></i> Create Account</a>
+  </div>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-hero">
+        <i class="fas fa-seedling"></i>
+        <h2>Grow Your Market</h2>
+        <p>Connect directly with farmers and buyers across your region. No middlemen, fair prices, fresh produce.</p>
+        <div class="feature"><i class="fas fa-check-circle"></i> Direct farmer-to-buyer trading</div>
+        <div class="feature"><i class="fas fa-check-circle"></i> Secure ordering and delivery tracking</div>
+        <div class="feature"><i class="fas fa-check-circle"></i> Ratings and reviews for trust</div>
+      </div>
+    </div>
+    <div class="auth-form">
+      <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form-inner" novalidate>
+        <div class="form-group">
+          <label><i class="fas fa-id-badge"></i> Login as</label>
+          <div class="role-selector">
+            <label class="role-chip active" data-role="buyer">
+              <input type="radio" name="role" value="buyer" checked style="display:none;">
+              <i class="fas fa-store"></i> Buyer
+            </label>
+            <label class="role-chip" data-role="farmer">
+              <input type="radio" name="role" value="farmer" style="display:none;">
+              <i class="fas fa-user-farmer"></i> Farmer
+            </label>
+            <label class="role-chip" data-role="admin">
+              <input type="radio" name="role" value="admin" style="display:none;">
+              <i class="fas fa-shield-alt"></i> Admin
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Email <span class="req">*</span></label>
+          <input type="email" name="email" placeholder="you@example.com" required>
+        </div>
+
+        <div class="form-group password-field">
+          <label><i class="fas fa-lock"></i> Password <span class="req">*</span></label>
+          <input type="password" name="password" placeholder="••••••••" required>
+          <button type="button" class="password-toggle" id="toggleLoginPwd" aria-label="Toggle password visibility">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+
+        {% if request.args.next %}
+          <p class="form-hint">You will be redirected to <strong>{{ request.args.next }}</strong> after login.</p>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+      </form>
+      <div class="auth-footer" style="background:transparent; border-top:none; padding-top:0;">
+        Don't have an account? <a href="{{ url_for('auth.register') }}">Create one</a><br>
+        <small>First admin? <a href="{{ url_for('admin.setup') }}">Setup Administrator Account</a></small>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Role chip selection
+  document.querySelectorAll('.role-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      const radio = this.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+    });
+  });
+
+  // Toggle password visibility
+  const toggle = document.getElementById('toggleLoginPwd');
+  const pwdInput = document.querySelector('input[name="password"]');
+  toggle.addEventListener('click', function() {
+    const isPassword = pwdInput.type === 'password';
+    pwdInput.type = isPassword ? 'text' : 'password';
+    this.querySelector('i').classList.toggle('fa-eye');
+    this.querySelector('i').classList.toggle('fa-eye-slash');
+  });
+</script>
+{% endblock %}
