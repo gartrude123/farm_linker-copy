@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+{% block title %}Register | Farm Linker{% endblock %}
+
+{% block page_actions %}
+  <div class="page-actions">
+    <a href="{{ url_for('auth.login') }}" class="btn btn-outline btn-sm"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+  </div>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-hero">
+        <i class="fas fa-user-plus"></i>
+        <h2>Join the Market</h2>
+        <p>Create your Farm Linker account and start trading fresh produce directly.</p>
+        <div class="feature"><i class="fas fa-check-circle"></i> Farmers: list your produce and receive orders</div>
+        <div class="feature"><i class="fas fa-check-circle"></i> Buyers: browse, order, and rate suppliers</div>
+        <div class="feature"><i class="fas fa-check-circle"></i> Admins: manage the platform</div>
+      </div>
+    </div>
+    <div class="auth-form">
+      <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form-inner">
+        <div class="form-group">
+          <label><i class="fas fa-id-badge"></i> Register as</label>
+          <div class="role-selector">
+            <label class="role-chip active" data-role="buyer">
+              <input type="radio" name="role" value="buyer" checked required style="display:none;">
+              <i class="fas fa-store"></i> Buyer
+            </label>
+            <label class="role-chip" data-role="farmer">
+              <input type="radio" name="role" value="farmer" style="display:none;">
+              <i class="fas fa-user-farmer"></i> Farmer
+            </label>
+            <label class="role-chip" data-role="admin">
+              <input type="radio" name="role" value="admin" style="display:none;">
+              <i class="fas fa-shield-alt"></i> Admin
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Full Name <span class="req">*</span></label>
+          <input type="text" name="full_name" placeholder="John Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Email <span class="req">*</span></label>
+          <input type="email" name="email" placeholder="you@example.com" required>
+          <div class="field-match" id="emailMatch"></div>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-phone"></i> Phone <span class="req">*</span></label>
+          <input type="tel" name="phone" placeholder="+256 700 000 000" required>
+        </div>
+
+        <div class="form-group password-field">
+          <label><i class="fas fa-lock"></i> Password <span class="req">*</span></label>
+          <input type="password" name="password" placeholder="••••••••" required minlength="6">
+          <button type="button" class="password-toggle" id="toggleRegPwd" aria-label="Toggle password visibility">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+
+        <div class="form-group password-field">
+          <label><i class="fas fa-lock"></i> Confirm Password <span class="req">*</span></label>
+          <input type="password" name="password_confirm" placeholder="••••••••" required>
+          <button type="button" class="password-toggle" id="toggleRegPwdConfirm" aria-label="Toggle password visibility">
+            <i class="fas fa-eye"></i>
+          </button>
+          <div class="field-match" id="pwdMatch"></div>
+        </div>
+
+        <!-- Farmer-specific fields -->
+        <div id="farmerFields" style="display:none; background:#f0fdf4; padding:1rem; border-radius:8px; border:1px solid #bbf7d0; margin-top:1rem;">
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> District</label>
+            <input type="text" name="district" placeholder="District">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> Village</label>
+            <input type="text" name="village" placeholder="Village">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-history"></i> Farm Size (acres)</label>
+            <input type="number" name="farmSizeAcres" placeholder="0" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-leaf"></i> Main Crops <span class="form-hint">Select two or more</span></label>
+            <div class="crop-grid">
+              <label class="crop-item">
+                <input type="checkbox" name="mainCrops" value="Maize"> <i class="fas fa-check"></i> Maize
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="mainCrops" value="Beans"> <i class="fas fa-check"></i> Beans
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="mainCrops" value="Tomatoes"> <i class="fas fa-check"></i> Tomatoes
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="mainCrops" value="Cabbage"> <i class="fas fa-check"></i> Cabbage
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="mainCrops" value="Carrots"> <i class="fas fa-check"></i> Carrots
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="mainCrops" value="Onions"> <i class="fas fa-check"></i> Onions
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="mainCrops" value="Potatoes"> <i class="fas fa-check"></i> Potatoes
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="mainCrops" value="Coffee"> <i class="fas fa-check"></i> Coffee
+              </label>
+            </div>
+            <div class="field-match" id="cropMatch" style="color:#dc2626;"></div>
+          </div>
+        </div>
+
+        <!-- Buyer-specific fields -->
+        <div id="buyerFields">
+          <div class="form-group">
+            <label><i class="fas fa-store"></i> Business Name <span class="req">*</span></label>
+            <input type="text" name="businessName" placeholder="Business Name">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-user-tie"></i> Contact Person</label>
+            <input type="text" name="contactPerson" placeholder="Contact Person">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-tag"></i> Buyer Type</label>
+            <select name="buyerType">
+              <option value="Market Vendor">Market Vendor</option>
+              <option value="Restaurant">Restaurant</option>
+              <option value="Processor">Processor</option>
+              <option value="Wholesaler">Wholesaler</option>
+              <option value="Retailer">Retailer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-leaf"></i> Preferred Produce</label>
+            <div class="crop-grid">
+              <label class="crop-item">
+                <input type="checkbox" name="preferredProduce" value="Maize"> <i class="fas fa-check"></i> Maize
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="preferredProduce" value="Tomatoes"> <i class="fas fa-check"></i> Tomatoes
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="preferredProduce" value="Cabbage"> <i class="fas fa-check"></i> Cabbage
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="preferredProduce" value="Carrots"> <i class="fas fa-check"></i> Carrots
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="preferredProduce" value="Coffee"> <i class="fas fa-check"></i> Coffee
+              </label>
+              <label class="crop-item">
+                <input type="checkbox" name="preferredProduce" value="Beans"> <i class="fas fa-check"></i> Beans
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin-specific fields (no preferred produce) -->
+        <div id="adminFields" style="display:none; background:#fdf2f8; padding:1rem; border-radius:8px; border:1px solid #fbcfe8; margin-top:1rem;">
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> District</label>
+            <input type="text" name="district" placeholder="District">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> Village</label>
+            <input type="text" name="village" placeholder="Village">
+          </div>
+          <div class="form-hint" style="color:#be185d;">Only one administrator account is allowed. If one exists, the current admin must approve your request.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="regBtn">Create Account</button>
+      </form>
+      <div class="auth-footer" style="background:transparent; border-top:none; padding-top:0;">
+        Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Role chip selection
+  const roleChips = document.querySelectorAll('.role-chip');
+  const farmerFields = document.getElementById('farmerFields');
+  const buyerFields = document.getElementById('buyerFields');
+  const adminFields = document.getElementById('adminFields');
+  const cropMatch = document.getElementById('cropMatch');
+
+  roleChips.forEach(chip => {
+    chip.addEventListener('click', function() {
+      roleChips.forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      const radio = this.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+
+      const disableInputs = (section) => {
+        section.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+      };
+      const enableInputs = (section) => {
+        section.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+      };
+
+      if (this.dataset.role === 'farmer') {
+        farmerFields.style.display = 'block';
+        buyerFields.style.display = 'none';
+        adminFields.style.display = 'none';
+        enableInputs(farmerFields);
+        disableInputs(buyerFields);
+        disableInputs(adminFields);
+      } else if (this.dataset.role === 'admin') {
+        farmerFields.style.display = 'none';
+        buyerFields.style.display = 'none';
+        adminFields.style.display = 'block';
+        disableInputs(farmerFields);
+        disableInputs(buyerFields);
+        enableInputs(adminFields);
+      } else {
+        farmerFields.style.display = 'none';
+        buyerFields.style.display = 'block';
+        adminFields.style.display = 'none';
+        disableInputs(farmerFields);
+        enableInputs(buyerFields);
+        disableInputs(adminFields);
+      }
+    });
+  });
+
+  // Toggle password visibility
+  function setupToggle(toggleId, inputName) {
+    const toggle = document.getElementById(toggleId);
+    const pwdInput = document.querySelector('input[name="' + inputName + '"]');
+    if (!toggle || !pwdInput) return;
+    toggle.addEventListener('click', function() {
+      const isPassword = pwdInput.type === 'password';
+      pwdInput.type = isPassword ? 'text' : 'password';
+      this.querySelector('i').classList.toggle('fa-eye');
+      this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+  }
+  setupToggle('toggleRegPwd', 'password');
+  setupToggle('toggleRegPwdConfirm', 'password_confirm');
+
+  // Email confirmation hint (real-time)
+  const emailInput = document.querySelector('input[name="email"]');
+  const emailMatch = document.getElementById('emailMatch');
+  if (emailInput && emailMatch) {
+    emailInput.addEventListener('input', function() {
+      const email = this.value;
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email) {
+        emailMatch.textContent = '';
+        emailMatch.className = 'field-match';
+      } else if (!re.test(email)) {
+        emailMatch.textContent = 'Please enter a valid email address';
+        emailMatch.className = 'field-match invalid';
+      } else {
+        emailMatch.textContent = 'Email looks valid';
+        emailMatch.className = 'field-match valid';
+      }
+    });
+  }
+
+  // Password match validation
+  const pwdInput = document.querySelector('input[name="password"]');
+  const pwdConfirm = document.querySelector('input[name="password_confirm"]');
+  const pwdMatch = document.getElementById('pwdMatch');
+  if (pwdInput && pwdConfirm && pwdMatch) {
+    function checkPwdMatch() {
+      if (!pwdInput.value || !pwdConfirm.value) {
+        pwdMatch.textContent = '';
+        pwdMatch.className = 'field-match';
+        return;
+      }
+      if (pwdInput.value === pwdConfirm.value) {
+        pwdMatch.textContent = 'Passwords match';
+        pwdMatch.className = 'field-match valid';
+      } else {
+        pwdMatch.textContent = 'Passwords do not match';
+        pwdMatch.className = 'field-match invalid';
+      }
+    }
+    pwdInput.addEventListener('input', checkPwdMatch);
+    pwdConfirm.addEventListener('input', checkPwdMatch);
+  }
+
+  // Crop selection validation (farmer must select at least 2)
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      const role = document.querySelector('input[name="role"]:checked');
+      if (role && role.value === 'farmer') {
+        const crops = document.querySelectorAll('input[name="mainCrops"]:checked');
+        if (crops.length < 2) {
+          e.preventDefault();
+          cropMatch.textContent = 'Please select at least two main crops.';
+          cropMatch.className = 'field-match invalid';
+          return false;
+        }
+      }
+    });
+  }
+
+  // Crop item visual toggle
+  document.querySelectorAll('.crop-item').forEach(item => {
+    const checkbox = item.querySelector('input[type="checkbox"]');
+    checkbox.addEventListener('change', function() {
+      if (this.checked) {
+        item.classList.add('selected');
+      } else {
+        item.classList.remove('selected');
+      }
+    });
+  });
+
+  // Initialize disabled state on page load (buyer is default)
+  const disableInputs = (section) => {
+    section.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+  };
+  const enableInputs = (section) => {
+    section.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+  };
+  disableInputs(farmerFields);
+  disableInputs(adminFields);
+</script>
+{% endblock %}
