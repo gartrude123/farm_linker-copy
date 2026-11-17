@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Farm Linker{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <i class="fas fa-seedling"></i> <strong>Farm Linker</strong>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="nav-links">
+      {% if session.user_id %}
+        {% if session.user_role == "farmer" %}
+          <a href="{{ url_for('farmer.dashboard') }}"><i class="fas fa-user-farmer"></i> Farmer Dashboard</a>
+          <a href="{{ url_for('farmer.listings') }}"><i class="fas fa-box"></i> My Listings</a>
+          <a href="{{ url_for('farmer.orders') }}"><i class="fas fa-shopping-cart"></i> My Orders</a>
+          <a href="{{ url_for('farmer.buyers') }}"><i class="fas fa-users"></i> Buyers</a>
+        {% elif session.user_role == "admin" %}
+          <a href="{{ url_for('admin.dashboard') }}"><i class="fas fa-shield-alt"></i> Admin Dashboard</a>
+          <a href="{{ url_for('admin.farmers') }}"><i class="fas fa-user-farmer"></i> Farmers</a>
+          <a href="{{ url_for('admin.buyers') }}"><i class="fas fa-users"></i> Buyers</a>
+          <a href="{{ url_for('admin.listings') }}"><i class="fas fa-box"></i> Listings</a>
+          <a href="{{ url_for('admin.orders') }}"><i class="fas fa-shopping-cart"></i> Orders</a>
+          <a href="{{ url_for('admin.reviews') }}"><i class="fas fa-comment-dots"></i> Reviews</a>
+        {% else %}
+          <a href="{{ url_for('buyer.dashboard') }}"><i class="fas fa-store"></i> Buyer Dashboard</a>
+          <a href="{{ url_for('buyer.listings') }}"><i class="fas fa-box"></i> Browse Produce</a>
+          <a href="{{ url_for('buyer.farmers') }}"><i class="fas fa-user-farmer"></i> Farmers</a>
+          <a href="{{ url_for('buyer.orders') }}"><i class="fas fa-shopping-cart"></i> My Orders</a>
+        {% endif %}
+        <a href="{{ url_for('auth.profile') }}"><i class="fas fa-user-circle"></i> Profile</a>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline btn-sm"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i> Register</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="container page-wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container" id="flash-container">
+          {% for category, msg in messages %}
+            <div class="flash flash-{{ category }}" role="alert">
+              <span class="flash-icon">
+                {% if category == 'success' %}<i class="fas fa-check-circle"></i>
+                {% elif category == 'danger' %}<i class="fas fa-exclamation-circle"></i>
+                {% elif category == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+                {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+              </span>
+              {{ msg }}
+              <button class="flash-dismiss" aria-label="Dismiss">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    {% block page_actions %}{% endblock %}
+  </main>
+
+  {% if session.user_id %}
+  <nav class="bottom-quick" aria-label="Quick actions">
+    <a href="{{ url_for('auth.profile') }}" class="btn btn-outline btn-sm"><i class="fas fa-user-circle"></i> Profile</a>
+    {% if session.user_role == "farmer" %}
+      <a href="{{ url_for('farmer.dashboard') }}" class="btn btn-primary btn-sm"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+      <a href="{{ url_for('farmer.listings') }}" class="btn btn-outline btn-sm"><i class="fas fa-box"></i> Listings</a>
+      <a href="{{ url_for('farmer.orders') }}" class="btn btn-outline btn-sm"><i class="fas fa-shopping-cart"></i> Orders</a>
+    {% else %}
+      <a href="{{ url_for('buyer.dashboard') }}" class="btn btn-primary btn-sm"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+      <a href="{{ url_for('buyer.listings') }}" class="btn btn-outline btn-sm"><i class="fas fa-box"></i> Browse</a>
+      <a href="{{ url_for('buyer.orders') }}" class="btn btn-outline btn-sm"><i class="fas fa-shopping-cart"></i> Orders</a>
+    {% endif %}
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Exit</a>
+  </nav>
+  {% endif %}
+
+  <footer class="footer">
+    <p>&copy; 2026 Farm Linker &mdash; Connecting farmers directly to buyers</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
