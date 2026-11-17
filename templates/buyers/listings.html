@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Browse Produce{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-box"></i>
+    <h1>Browse Produce Listings</h1>
+    <p>Find fresh produce from farmers near you</p>
+  </div>
+  <form method="GET" action="{{ url_for('buyer.listings') }}" class="form-grid" style="padding:1rem 0; background:#f8fafc; border-radius:8px; margin-bottom:1rem;">
+    <div class="form-group">
+      <label>Filter by Crop</label>
+      <input type="text" name="crop" value="{{ crop }}" placeholder="e.g. Maize">
+    </div>
+    <div class="form-group">
+      <label>Filter by District</label>
+      <input type="text" name="district" value="{{ district }}" placeholder="District">
+    </div>
+    <div class="form-group">
+      <label>Min Price</label>
+      <input type="number" name="min_price" value="{{ min_price }}" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label>Max Price</label>
+      <input type="number" name="max_price" value="{{ max_price }}" placeholder="0">
+    </div>
+    <div class="form-group" style="align-self:end;">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+      <a href="{{ url_for('buyer.listings') }}" class="btn btn-outline">Reset</a>
+    </div>
+  </form>
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Category</th>
+          <th>Qty / Unit</th>
+          <th>Price</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in listings %}
+        {% set f = farmers | selectattr('_id', 'equalto', l.farmerId) | list | first if farmers else none %}
+        {% set farmer_name = f.fullName if f else 'Unknown Farmer' %}
+        <tr>
+          <td><strong>{{ l.cropName }}</strong></td>
+          <td>{{ farmer_name }}</td>
+          <td><span class="chip">{{ l.category or '-' }}</span></td>
+          <td>{{ l.quantity }} {{ l.unit }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(l.pricePerUnit) }}</span></td>
+          <td class="text-center">
+            <a href="{{ url_for('buyer.create_order') }}?listing={{ l._id }}" class="btn btn-sm btn-primary"><i class="fas fa-shopping-cart"></i> Order</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No listings match your filters.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
