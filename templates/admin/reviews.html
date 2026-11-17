@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Manage Reviews{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-comment-dots"></i>
+    <h1>Manage Reviews</h1>
+    <p>View all reviews and ratings</p>
+  </div>
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Reviewer</th>
+          <th>Reviewee</th>
+          <th>Rating</th>
+          <th>Comment</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reviews %}
+        <tr>
+          <td>{{ r.orderId | string | truncate(8, end='') if r.orderId else '-' }}</td>
+          <td>{{ r.reviewerId | string | truncate(8, end='') if r.reviewerId else '-' }}</td>
+          <td>{{ r.revieweeId | string | truncate(8, end='') if r.revieweeId else '-' }}</td>
+          <td>
+            <span class="rating-stars">{{ '★' * (r.rating | int) }}{{ '☆' * (5 - (r.rating | int)) }}</span>
+            {{ r.rating }}
+          </td>
+          <td>{{ r.comment or '-' }}</td>
+          <td class="text-center">
+            <a href="{{ url_for('admin.reviews') }}" class="btn btn-sm btn-danger deleteBtn">Delete</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No reviews.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
