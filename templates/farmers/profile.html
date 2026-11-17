@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-user"></i>
+    <h1>My Profile</h1>
+    <p>Manage your account details</p>
+  </div>
+</section>
+
+<div class="card">
+  <div class="card-body">
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <i class="fas fa-user-farmer"></i>
+        </div>
+        <div class="profile-info">
+          <h2>{{ user.fullName or user.businessName }}</h2>
+          <p><strong>{{ 'Farmer' if role == 'farmer' else 'Buyer' }}</strong> &bull; Member since {{ user.createdAt.strftime('%B %Y') if user.createdAt else 'N/A' }}</p>
+        </div>
+      </div>
+      <div class="profile-grid">
+        {% if role == 'farmer' %}
+        <div class="profile-row">
+          <span class="label">Phone</span>
+          <span class="value">{{ user.phone or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">District</span>
+          <span class="value">{{ user.district or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Village</span>
+          <span class="value">{{ user.village or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Farm Size</span>
+          <span class="value">{{ user.farmSizeAcres }} acres</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Main Crops</span>
+          <span class="value">{{ user.mainCrops | join(', ') if user.mainCrops else '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Verification Status</span>
+          <span class="value">
+            {% if user.isVerified %}<span class="badge badge-Completed">Verified</span>{% else %}<span class="badge badge-Pending">Pending</span>{% endif %}
+          </span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Rating</span>
+          <span class="value">
+            <span class="rating-stars">{{ '★' * (user.rating | int) }}{{ '☆' * (5 - (user.rating | int)) }}</span>
+            {{ '%.1f'|format(user.rating) }} ({{ user.reviewsCount }} reviews)
+          </span>
+        </div>
+        {% else %}
+        <div class="profile-row">
+          <span class="label">Business Name</span>
+          <span class="value">{{ user.businessName }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Contact Person</span>
+          <span class="value">{{ user.contactPerson or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Phone</span>
+          <span class="value">{{ user.phone or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Buyer Type</span>
+          <span class="value">{{ user.buyerType or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Preferred Produce</span>
+          <span class="value">{{ user.preferredProduce | join(', ') if user.preferredProduce else '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Rating</span>
+          <span class="value">
+            <span class="rating-stars">{{ '★' * (user.rating | int) }}{{ '☆' * (5 - (user.rating | int)) }}</span>
+            {{ '%.1f'|format(user.rating) }} ({{ user.reviewsCount }} reviews)
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
