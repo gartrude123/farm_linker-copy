@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Receipt #{{ order.receiptNumber }}{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-file-invoice"></i>
+    <h1>Order Receipt</h1>
+    <p>Receipt #{{ order.receiptNumber }}</p>
+  </div>
+  <div class="receipt-actions">
+    <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Print Receipt</button>
+    <button class="btn btn-outline" onclick="window.print()"><i class="fas fa-download"></i> Save as PDF</button>
+  </div>
+</section>
+
+<div class="card receipt-card">
+  <div class="card-header">
+    <h3><i class="fas fa-file-invoice-dollar"></i> Farm Linker Receipt</h3>
+  </div>
+  <div class="receipt-body" style="padding:1.5rem;">
+    <div class="receipt-grid">
+      <div class="receipt-col">
+        <h4>Buyer</h4>
+        <p><strong>{{ buyer.businessName if buyer else 'N/A' }}</strong></p>
+        <p><small>{{ buyer.contactPerson if buyer else '' }}</small></p>
+        <p><small>{{ buyer.phone if buyer else '' }}</small></p>
+      </div>
+      <div class="receipt-col">
+        <h4>Farmer</h4>
+        <p><strong>{{ farmer.fullName if farmer else 'N/A' }}</strong></p>
+        <p><small>{{ farmer.phone if farmer else '' }}</small></p>
+        <p><small>{{ farmer.district if farmer else '' }}, {{ farmer.village if farmer else '' }}</small></p>
+      </div>
+      <div class="receipt-col">
+        <h4>Order Details</h4>
+        <p><strong>Order ID:</strong> {{ order._id }}</p>
+        <p><strong>Receipt #:</strong> {{ order.receiptNumber }}</p>
+        <p><strong>Date:</strong> {{ order.receiptGeneratedAt or order._id.generation_time }}</p>
+        <p><strong>Payment Method:</strong> {{ order.paymentMethod }}</p>
+        <p><strong>Payment Date:</strong> {{ order.paymentDate or 'Pending' }}</p>
+        <p><strong>Delivery Method:</strong> {{ order.deliveryMethod }}</p>
+      </div>
+    </div>
+
+    <hr style="margin:1rem 0;">
+
+    <table class="data-table" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ listing.cropName if listing else order.cropNameSnapshot }}</td>
+          <td>{{ order.quantityOrdered }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(order.unitPriceSnapshot or 0) }}</span></td>
+          <td><span class="price">UGX {{ '%.0f'|format(order.totalPrice or 0) }}</span></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="text-right"><strong>Grand Total</strong></td>
+          <td><strong><span class="price">UGX {{ '%.0f'|format(order.totalPrice or 0) }}</span></strong></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    {% if order.deliveryPlace or order.deliveryTime %}
+    <div class="delivery-info" style="margin-top:1rem; padding:1rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px;">
+      <h4>Delivery Information</h4>
+      <p><strong>Place:</strong> {{ order.deliveryPlace }}</p>
+      <p><strong>Time:</strong> {{ order.deliveryTime }}</p>
+      {% if order.deliveryNotes %}<p><strong>Notes:</strong> {{ order.deliveryNotes }}</p>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="receipt-footer" style="margin-top:1.5rem; text-align:center; color:#6b7280; font-size:0.85rem;">
+      <p>Thank you for using Farm Linker &mdash; connecting farmers to urban buyers.</p>
+      <p>This receipt was generated electronically and can be printed or saved as PDF.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .receipt-card { max-width: 800px; margin: 0 auto; }
+  .receipt-actions { margin-bottom: 1rem; text-align: right; }
+  .receipt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+  .receipt-col h4 { color: #15803d; border-bottom: 2px solid #15803d; padding-bottom: 0.5rem; margin-bottom: 0.75rem; }
+  .receipt-footer { border-top: 1px solid #e5e7eb; padding-top: 1rem; }
+  @media print {
+    .navbar, .footer, .receipt-actions, .btn { display: none !important; }
+    .receipt-card { box-shadow: none; border: none; }
+    body { background: #fff; }
+  }
+</style>
+{% endblock %}
