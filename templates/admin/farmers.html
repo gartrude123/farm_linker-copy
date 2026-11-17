@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Manage Farmers{% endblock %}
+
+{% block page_actions %}
+  <div class="page-actions">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+  </div>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+  <h2>Manage Farmers</h2>
+  <p>View, verify, activate, suspend, or block all farmer accounts.</p>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>District</th>
+          <th>Verification</th>
+          <th>Account Status</th>
+          <th>Rating</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in farmers %}
+        <tr>
+          <td><strong>{{ f.fullName }}</strong></td>
+          <td>{{ f.email or '-' }}</td>
+          <td>{{ f.phone or '-' }}</td>
+          <td>{{ f.district or '-' }}, {{ f.village or '-' }}</td>
+          <td>
+            {% if f.isVerified %}
+              <span class="badge badge-Completed">Verified</span>
+              <a href="{{ url_for('admin.verify_farmer', id=f._id, verified='false') }}" class="btn btn-sm btn-warning">Revoke</a>
+            {% else %}
+              <span class="badge badge-Pending">Pending</span>
+              <a href="{{ url_for('admin.verify_farmer', id=f._id, verified='true') }}" class="btn btn-sm btn-success">Verify</a>
+            {% endif %}
+          </td>
+          <td>
+            {% set status = f.accountStatus or 'active' %}
+            {% if status == 'active' %}
+              <span class="badge badge-Completed">Active</span>
+            {% elif status == 'suspended' %}
+              <span class="badge badge-Pending">Suspended</span>
+            {% else %}
+              <span class="badge badge-Rejected">Blocked</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="rating-stars">{{ '★' * (f.rating | int) }}{{ '☆' * (5 - (f.rating | int)) }}</span>
+            {{ '%.1f'|format(f.rating) }}
+          </td>
+          <td class="text-center">
+            <div class="order-actions">
+              {% if status != 'active' %}
+                <a href="{{ url_for('admin.farmer_status', id=f._id, status='active') }}" class="btn btn-sm btn-success"><i class="fas fa-unlock"></i> Activate</a>
+              {% endif %}
+              {% if status != 'suspended' %}
+                <a href="{{ url_for('admin.farmer_status', id=f._id, status='suspended') }}" class="btn btn-sm btn-warning"><i class="fas fa-pause"></i> Suspend</a>
+              {% endif %}
+              {% if status != 'blocked' %}
+                <a href="{{ url_for('admin.farmer_status', id=f._id, status='blocked') }}" class="btn btn-sm btn-danger"><i class="fas fa-user-slash"></i> Block</a>
+              {% endif %}
+              <a href="tel:{{ f.phone }}" class="btn btn-sm btn-info" title="Call"><i class="fas fa-phone"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">No farmers registered.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
