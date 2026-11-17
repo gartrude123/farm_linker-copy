@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Admin Profile{% endblock %}
+
+{% block page_actions %}
+  <div class="page-actions">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+  </div>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+  <h2>Administrator Profile</h2>
+  <p>Your account details and platform management info.</p>
+</div>
+
+<div class="profile-card">
+  <div class="profile-header">
+    <div class="profile-avatar">
+      <i class="fas fa-shield-alt"></i>
+    </div>
+    <div class="profile-info">
+      <h2>{{ user.fullName or user.get('fullName') or 'Administrator' }}</h2>
+      <p>{{ user.email or user.get('email') }}</p>
+      <p><span class="badge badge-Completed">Administrator</span></p>
+    </div>
+  </div>
+
+  <div class="profile-grid">
+    <div class="profile-row">
+      <span class="label">Email</span>
+      <span class="value">{{ user.email or user.get('email') or '-' }}</span>
+    </div>
+    <div class="profile-row">
+      <span class="label">Phone</span>
+      <span class="value">{{ user.phone or user.get('phone') or '-' }}</span>
+    </div>
+    <div class="profile-row">
+      <span class="label">District</span>
+      <span class="value">{{ user.district or user.get('district') or '-' }}</span>
+    </div>
+    <div class="profile-row">
+      <span class="label">Village</span>
+      <span class="value">{{ user.village or user.get('village') or '-' }}</span>
+    </div>
+    <div class="profile-row">
+      <span class="label">Account Status</span>
+      <span class="value">{{ user.accountStatus or user.get('accountStatus') or 'active' }}</span>
+    </div>
+    <div class="profile-row">
+      <span class="label">Member Since</span>
+      <span class="value">{{ (user.createdAt or user.get('createdAt')).strftime('%d %b %Y') if user.get('createdAt') else (user.createdAt.strftime('%d %b %Y') if user.get('createdAt') else '-') }}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
