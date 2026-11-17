@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Buyer Dashboard{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-store"></i>
+    <h1>Buyer Dashboard</h1>
+    <p>Browse produce, place orders, and track deliveries</p>
+  </div>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-value">{{ listings|length }}</div>
+      <div class="stat-label">Available Listings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ orders|length }}</div>
+      <div class="stat-label">My Orders</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ orders | selectattr('paymentStatus', 'equalto', 'paid') | list | length }}</div>
+      <div class="stat-label">Paid Orders</div>
+    </div>
+  </div>
+</section>
+
+<!-- Search / Filter -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-header">
+    <h3><i class="fas fa-search"></i> Search Farmers &amp; Products</h3>
+  </div>
+  <form method="GET" action="{{ url_for('buyer_search') }}" class="form-grid" style="padding:1rem 1.25rem;">
+    <div class="form-group">
+      <label>Search crop, farmer, or product</label>
+      <input type="text" name="q" placeholder="e.g. Maize, Tomatoes...">
+    </div>
+    <div class="form-group" style="align-self:end;">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+    </div>
+  </form>
+  <p class="form-hint" style="padding:0 1.25rem 1rem;">Search by crop name or farmer name to find produce quickly.</p>
+</section>
+
+<!-- Available Listings -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-box"></i> Available Produce Listings</h3>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Category</th>
+          <th>Qty / Unit</th>
+          <th>Price</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in listings %}
+        {% set fm = farmers | selectattr('_id', 'equalto', l.farmerId) | list | first %}
+        <tr data-id="{{ l._id }}" data-crop-name="{{ l.cropName|e }}"
+            data-quantity="{{ l.quantity or '' }}" data-unit="{{ l.unit or '' }}"
+            data-price-per-unit="{{ l.pricePerUnit or '' }}">
+          <td><strong>{{ l.cropName }}</strong></td>
+          <td>{{ fm.fullName if fm else '-' }}</td>
+          <td><span class="chip">{{ l.category or '-' }}</span></td>
+          <td>{{ l.quantity or '-' }} {{ l.unit or '' }}</td>
+          <td>
+            {% if l.pricePerUnit is not none %}<span class="price">UGX {{ '%.0f'|format(l.pricePerUnit) }}</span>{% else %}-{% endif %}
+          </td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-primary orderFromListingBtn" data-listing-id="{{ l._id }}" data-crop="{{ l.cropName }}">
+              <i class="fas fa-shopping-cart"></i> Order
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No listings available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Place Order Modal -->
+<div class="modal" id="placeOrderModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('placeOrderModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-shopping-cart"></i> Place Order</h3>
+    </div>
+    <form method="POST" action="{{ url_for('add_order') }}" class="modal-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="listingId" id="orderListingId">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Buyer <span class="req">*</span></label>
+          <select name="buyerId" required>
+            <option value="">Select Buyer</option>
+            {% for b in buyers %}
+            <option value="{{ b._id }}">{{ b.businessName }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Farmer <span class="req">*</span></label>
+          <select name="farmerId" required>
+            <option value="">Select Farmer</option>
+            {% for fm in farmers %}
+            <option value="{{ fm._id }}">{{ fm.fullName }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity Ordered</label>
+          <input type="number" name="quantityOrdered" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Total Price</label>
+          <input type="number" name="totalPrice" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Payment Method <span class="req">*</span></label>
+          <select name="paymentMethod" required>
+            <option value="">Select payment method</option>
+            {% for pm in payment_methods %}<option value="{{ pm }}">{{ pm }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment Date</label>
+          <input type="date" name="paymentDate">
+        </div>
+        <div class="form-group">
+          <label>Delivery Method</label>
+          <select name="deliveryMethod">
+            <option value="Pickup">Pickup</option>
+            <option value="Delivery">Delivery</option>
+            <option value="Courier">Courier</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Order Status</label>
+          <select name="orderStatus">
+            {% for s in order_statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select name="paymentStatus">
+            {% for ps in payment_statuses %}<option value="{{ ps }}">{{ ps }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('placeOrderModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Place Order</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- My Orders -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-shopping-cart"></i> My Orders</h3>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Order Status</th>
+          <th>Payment</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        {% set listing = listings | selectattr('_id', 'equalto', o.listingId) | list | first %}
+        {% set farmer = farmers | selectattr('_id', 'equalto', o.farmerId) | list | first %}
+        <tr>
+          <td>{{ o.receiptNumber or ('ORD-' + o._id | string | truncate(8, end='')) }}</td>
+          <td>{{ listing.cropName if listing else o.cropNameSnapshot or '-' }}</td>
+          <td>{{ farmer.fullName if farmer else '-' }}</td>
+          <td>{{ o.quantityOrdered or '-' }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(o.totalPrice or 0) }}</span></td>
+          <td><span class="badge badge-{{ (o.orderStatus or 'pending') | replace('_','-') }}">{{ o.orderStatus or 'pending' }}</span></td>
+          <td><span class="badge badge-{{ (o.paymentStatus or 'unpaid') | replace('_','-') }}">{{ o.paymentStatus or 'unpaid' }}</span></td>
+          <td class="text-center">
+            {% if o.paymentStatus == 'paid' and o.receiptNumber %}
+              <a href="{{ url_for('order_receipt', id=o._id) }}" class="btn btn-sm btn-outline" title="View Receipt">
+                <i class="fas fa-file-invoice"></i> Receipt
+              </a>
+            {% elif o.deliveryNotified %}
+              <span class="badge badge-paid" style="font-size:0.75rem;">Delivered</span>
+            {% else %}
+              <button class="btn btn-sm btn-outline disabled">Pending</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">No orders yet. Place your first order from the listings above.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+  // Order from listing button
+  document.querySelectorAll('.orderFromListingBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const listingId = this.dataset.listingId;
+      const crop = this.dataset.crop;
+      document.getElementById('orderListingId').value = listingId;
+      // Auto-select farmer from listing data if available
+      const row = this.closest('tr');
+      openModal('placeOrderModal');
+    });
+  });
+
+  document.querySelectorAll('.modal').forEach(m=>{ m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); }); });
+</script>
+{% endblock %}
