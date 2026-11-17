@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% block title %}Farmer Dashboard{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-user-farmer"></i>
+    <h1>Farmer Dashboard</h1>
+    <p>Manage your produce listings and delivery notifications</p>
+  </div>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-value">{{ listings|length }}</div>
+      <div class="stat-label">Produce Listings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ orders|length }}</div>
+      <div class="stat-label">Orders Received</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ orders | selectattr('deliveryNotified', 'equalto', true) | list | length }}</div>
+      <div class="stat-label">Delivery Notified</div>
+    </div>
+  </div>
+</section>
+
+<!-- Farmer's Produce Listings -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-box"></i> My Produce Listings</h3>
+    <button class="btn btn-primary" onclick="openModal('addListingModal')">
+      <i class="fas fa-plus"></i> Add Listing
+    </button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Category</th>
+          <th>Qty / Unit</th>
+          <th>Price</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in listings %}
+        <tr data-id="{{ l._id }}" data-delete-url="/listings/delete"
+            data-crop-name="{{ l.cropName|e }}" data-category="{{ l.category or '' }}"
+            data-quantity="{{ l.quantity or '' }}" data-unit="{{ l.unit or '' }}"
+            data-price-per-unit="{{ l.pricePerUnit or '' }}">
+          <td><strong>{{ l.cropName }}</strong></td>
+          <td><span class="chip">{{ l.category or '-' }}</span></td>
+          <td>{{ l.quantity or '-' }} {{ l.unit or '' }}</td>
+          <td>
+            {% if l.pricePerUnit is not none %}<span class="price">UGX {{ '%.0f'|format(l.pricePerUnit) }}</span>{% else %}-{% endif %}
+          </td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline editListingBtn" title="Edit"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-sm btn-danger deleteListingBtn" title="Delete"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">No listings yet. Add your first produce listing.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Listing Modal -->
+<div class="modal" id="addListingModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('addListingModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-plus"></i> Add Produce Listing</h3>
+    </div>
+    <form method="POST" action="{{ url_for('add_listing') }}" class="modal-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Crop Name <span class="req">*</span></label>
+          <input type="text" name="cropName" placeholder="e.g. Maize" required>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category">
+            <option value="">Category</option>
+            {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" name="quantity" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" name="unit" placeholder="kg, bags, crates">
+        </div>
+        <div class="form-group">
+          <label>Price per Unit</label>
+          <input type="number" name="pricePerUnit" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Harvest Date</label>
+          <input type="date" name="harvestDate">
+        </div>
+        <div class="form-group">
+          <label>Expiry Date</label>
+          <input type="date" name="expiryDate">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('addListingModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Listing</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Listing Modal -->
+<div class="modal" id="editListingModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('editListingModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-pen"></i> Edit Listing</h3>
+    </div>
+    <form id="editListingForm" class="modal-form">
+      <input type="hidden" name="id" id="editListingId">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Crop Name</label>
+          <input type="text" name="cropName" id="editCropName" placeholder="Crop Name">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category" id="editCategory">
+            <option value="">Category</option>
+            {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" name="quantity" id="editQuantity" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" name="unit" id="editUnit" placeholder="Unit">
+        </div>
+        <div class="form-group">
+          <label>Price per Unit</label>
+          <input type="number" name="pricePerUnit" id="editPricePerUnit" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Harvest Date</label>
+          <input type="date" name="harvestDate" id="editHarvestDate">
+        </div>
+        <div class="form-group">
+          <label>Expiry Date</label>
+          <input type="date" name="expiryDate" id="editExpiryDate">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editListingModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Orders Needing Delivery Notification -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-truck"></i> Orders &mdash; Delivery Notification</h3>
+    <p class="text-muted">Reply to buyers with delivery date, place and time.</p>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Buyer</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Notified</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        {% set listing = listings | selectattr('_id', 'equalto', o.listingId) | list | first %}
+        <tr data-id="{{ o._id }}" data-crop-name="{{ listing.cropName if listing else o.cropNameSnapshot or '-' }}">
+          <td>{{ listing.cropName if listing else o.cropNameSnapshot or '-' }}</td>
+          <td>{{ o.buyerId }}</td>
+          <td>{{ o.quantityOrdered or '-' }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(o.totalPrice or 0) }}</span></td>
+          <td><span class="badge badge-{{ (o.orderStatus or 'pending') | replace('_','-') }}">{{ o.orderStatus or 'pending' }}</span></td>
+          <td>
+            {% if o.deliveryNotified %}
+              <span class="badge badge-paid">Yes</span>
+            {% else %}
+              <span class="badge badge-unpaid">No</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if not o.deliveryNotified %}
+              <button class="btn btn-sm btn-primary replyBtn" title="Notify Delivery">
+                <i class="fas fa-reply"></i> Reply
+              </button>
+            {% else %}
+              <button class="btn btn-sm btn-outline" disabled>Notified</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">No orders yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Reply / Delivery Notification Modal -->
+<div class="modal" id="replyOrderModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('replyOrderModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-reply"></i> Notify Delivery</h3>
+    </div>
+    <form method="POST" action="{{ url_for('reply_order', id='PLACEHOLDER') }}" class="modal-form" id="replyForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Delivery Date <span class="req">*</span></label>
+          <input type="date" name="deliveryDate" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Place <span class="req">*</span></label>
+          <input type="text" name="deliveryPlace" placeholder="Farm / Market / Warehouse" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Time <span class="req">*</span></label>
+          <input type="time" name="deliveryTime" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Notes</label>
+          <textarea name="deliveryNotes" rows="3" placeholder="Any additional instructions..."></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('replyOrderModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Send Delivery Notification</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+  // Edit listing
+  document.querySelectorAll('.editListingBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const row=this.closest('tr');
+      openModal('editListingModal');
+      const form=document.getElementById('editListingForm');
+      form.id.value=row.dataset.id;
+      form.cropName.value=row.dataset.cropName||'';
+      form.category.value=row.dataset.category||'';
+      form.quantity.value=row.dataset.quantity||'';
+      form.unit.value=row.dataset.unit||'';
+      form.pricePerUnit.value=row.dataset.pricePerUnit||'';
+    });
+  });
+
+  // Delete listing
+  document.querySelectorAll('.deleteListingBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      if(!confirm('Delete this listing?')) return;
+      const row=this.closest('tr');
+      fetch(row.dataset.deleteUrl+'/'+row.dataset.id,{method:'GET',headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+        .then(()=>location.reload()).catch(()=>alert('Delete failed'));
+    });
+  });
+
+  // Reply to order
+  document.querySelectorAll('.replyBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const row=this.closest('tr');
+      const id=row.dataset.id;
+      const form=document.getElementById('replyForm');
+      form.action='/orders/reply/'+id;
+      openModal('replyOrderModal');
+    });
+  });
+
+  // Edit form submit
+  document.getElementById('editListingForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    const id=this.id.value;
+    const data=new FormData(this); data.delete('id');
+    fetch('/listings/update/'+id,{method:'POST',body:data,headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+      .then(()=>{ closeModal('editListingModal'); location.reload(); })
+      .catch(()=>alert('Update failed'));
+  });
+
+  document.querySelectorAll('.modal').forEach(m=>{ m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); }); });
+</script>
+{% endblock %}
