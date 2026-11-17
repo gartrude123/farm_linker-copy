@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Reviews{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-comment-dots"></i>
+    <h1>Reviews</h1>
+    <p>Ratings and feedback on completed orders</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addReviewModal')">
+    <i class="fas fa-plus"></i> Add Review
+  </button>
+</section>
+
+<!-- Add Review Modal -->
+<div class="modal" id="addReviewModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('addReviewModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-plus"></i> Add Review</h3>
+    </div>
+    <form method="POST" action="{{ url_for('add_review') }}" class="modal-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Order ID <span class="req">*</span></label>
+          <input type="text" name="orderId" placeholder="Order ID" required>
+        </div>
+        <div class="form-group">
+          <label>Reviewer ID</label>
+          <input type="text" name="reviewerId" placeholder="Reviewer ID">
+        </div>
+        <div class="form-group">
+          <label>Reviewee ID</label>
+          <input type="text" name="revieweeId" placeholder="Reviewee ID">
+        </div>
+        <div class="form-group">
+          <label>Rating (1-5) <span class="req">*</span></label>
+          <input type="number" name="rating" min="1" max="5" placeholder="5" required>
+        </div>
+        <div class="form-group">
+          <label>Comment</label>
+          <textarea name="comment" rows="3" placeholder="Your feedback"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('addReviewModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Review</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reviews List -->
+<div class="card">
+  <div class="card-header">
+    <span class="badge">{{ reviews|length }} review(s)</span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Reviewer</th>
+          <th>Reviewee</th>
+          <th>Rating</th>
+          <th>Comment</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reviews %}
+        <tr data-id="{{ r._id }}" data-delete-url="/reviews/delete"
+            data-rating="{{ r.rating or 0 }}" data-comment="{{ r.comment|e }}">
+          <td>{{ r.orderId or '-' }}</td>
+          <td>{{ r.reviewerId or '-' }}</td>
+          <td>{{ r.revieweeId or '-' }}</td>
+          <td>
+            <span class="rating-stars">{{ '★'.repeat(r.rating or 0) }}{{ '☆'.repeat(5-(r.rating or 0)) }}</span>
+            <span class="text-muted">({{ r.rating or 0 }})</span>
+          </td>
+          <td>{{ r.comment or '-' }}</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline editReviewBtn" title="Edit">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn btn-sm btn-danger deleteReviewBtn" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No reviews found. Add one to get started.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Review Modal -->
+<div class="modal" id="editReviewModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('editReviewModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-pen"></i> Edit Review</h3>
+    </div>
+    <form id="editReviewForm" class="modal-form">
+      <input type="hidden" name="id" id="editReviewId">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Rating (1-5)</label>
+          <input type="number" name="rating" id="editRating" min="1" max="5">
+        </div>
+        <div class="form-group">
+          <label>Comment</label>
+          <textarea name="comment" id="editComment" rows="3" placeholder="Comment"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editReviewModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+  document.querySelectorAll('.editReviewBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const row=this.closest('tr');
+      openModal('editReviewModal');
+      const form=document.getElementById('editReviewForm');
+      form.id.value=row.dataset.id;
+      form.rating.value=row.dataset.rating||'';
+      form.comment.value=row.dataset.comment||'';
+    });
+  });
+
+  document.querySelectorAll('.deleteReviewBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      if(!confirm('Delete this review?')) return;
+      const row=this.closest('tr');
+      fetch(row.dataset.deleteUrl+'/'+row.dataset.id,{method:'GET',headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+        .then(()=>location.reload()).catch(()=>alert('Delete failed'));
+    });
+  });
+
+  document.getElementById('editReviewForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    const id=this.id.value;
+    const data=new FormData(this); data.delete('id');
+    fetch('/reviews/update/'+id,{method:'POST',body:data,headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+      .then(()=>{ closeModal('editReviewModal'); location.reload(); })
+      .catch(()=>alert('Update failed'));
+  });
+
+  document.querySelectorAll('.modal').forEach(m=>{ m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); }); });
+</script>
+{% endblock %}
