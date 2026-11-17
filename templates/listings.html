@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Produce Listings{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-box"></i>
+    <h1>Produce Listings</h1>
+    <p>Fresh farm produce available for purchase</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addListingModal')">
+    <i class="fas fa-plus"></i> Add Listing
+  </button>
+  {% if price_stats %}
+    <a href="{{ url_for('price_stats') }}" class="btn btn-outline"><i class="fas fa-chart-line"></i> Price Stats</a>
+  {% endif %}
+</section>
+
+{% if price_stats %}
+<section class="price-stats">
+  <h3><i class="fas fa-chart-bar"></i> Price Transparency</h3>
+  <div class="stats-grid">
+    {% for s in price_stats %}
+    <div class="stat-card">
+      <div class="stat-crop">{{ s._id }}</div>
+      <div class="stat-value">UGX {{ '%.0f'|format(s.avgPrice|float(0)) }}</div>
+      <div class="stat-label">avg &bull; min {{ '%.0f'|format(s.minPrice|float(0)) }} &bull; max {{ '%.0f'|format(s.maxPrice|float(0)) }} &bull; {{ s.count }} listings</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Add Listing Modal -->
+<div class="modal" id="addListingModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('addListingModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-plus"></i> Add Listing</h3>
+    </div>
+    <form method="POST" action="{{ url_for('add_listing') }}" class="modal-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Farmer <span class="req">*</span></label>
+          <select name="farmerId" required>
+            <option value="">Select Farmer</option>
+            {% for fm in farmers %}
+            <option value="{{ fm._id }}">{{ fm.fullName }} ({{ fm.district or 'n/a' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Crop Name <span class="req">*</span></label>
+          <input type="text" name="cropName" placeholder="e.g. Maize" required>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category">
+            <option value="">Category</option>
+            {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" name="quantity" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" name="unit" placeholder="kg, bags, crates">
+        </div>
+        <div class="form-group">
+          <label>Price per Unit</label>
+          <input type="number" name="pricePerUnit" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Harvest Date</label>
+          <input type="date" name="harvestDate">
+        </div>
+        <div class="form-group">
+          <label>Expiry Date</label>
+          <input type="date" name="expiryDate">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('addListingModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Listing</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Listings List -->
+<div class="card">
+  <div class="card-header">
+    <span class="badge">{{ listings|length }} listing(s)</span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Category</th>
+          <th>Qty / Unit</th>
+          <th>Price</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in listings %}
+        {% set fm = farmers | selectattr('_id', 'equalto', l.farmerId) | list | first %}
+        <tr data-id="{{ l._id }}" data-delete-url="/listings/delete"
+            data-crop-name="{{ l.cropName|e }}" data-category="{{ l.category or '' }}"
+            data-quantity="{{ l.quantity or '' }}" data-unit="{{ l.unit or '' }}"
+            data-price-per-unit="{{ l.pricePerUnit or '' }}">
+          <td><strong>{{ l.cropName }}</strong></td>
+          <td>{{ fm.fullName if fm else '-' }}</td>
+          <td><span class="chip">{{ l.category or '-' }}</span></td>
+          <td>{{ l.quantity or '-' }} {{ l.unit or '' }}</td>
+          <td>
+            {% if l.pricePerUnit is not none %}<span class="price">UGX {{ '%.0f'|format(l.pricePerUnit) }}</span>{% else %}-{% endif %}
+          </td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline editListingBtn" title="Edit">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn btn-sm btn-danger deleteListingBtn" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No listings found. Add one to get started.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Listing Modal -->
+<div class="modal" id="editListingModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('editListingModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-pen"></i> Edit Listing</h3>
+    </div>
+    <form id="editListingForm" class="modal-form">
+      <input type="hidden" name="id" id="editListingId">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Crop Name</label>
+          <input type="text" name="cropName" id="editCropName" placeholder="Crop Name">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category" id="editCategory">
+            <option value="">Category</option>
+            {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" name="quantity" id="editQuantity" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" name="unit" id="editUnit" placeholder="Unit">
+        </div>
+        <div class="form-group">
+          <label>Price per Unit</label>
+          <input type="number" name="pricePerUnit" id="editPricePerUnit" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Harvest Date</label>
+          <input type="date" name="harvestDate" id="editHarvestDate">
+        </div>
+        <div class="form-group">
+          <label>Expiry Date</label>
+          <input type="date" name="expiryDate" id="editExpiryDate">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editListingModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+  document.querySelectorAll('.editListingBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const row=this.closest('tr');
+      openModal('editListingModal');
+      const form=document.getElementById('editListingForm');
+      form.id.value=row.dataset.id;
+      form.cropName.value=row.dataset.cropName||'';
+      form.category.value=row.dataset.category||'';
+      form.quantity.value=row.dataset.quantity||'';
+      form.unit.value=row.dataset.unit||'';
+      form.pricePerUnit.value=row.dataset.pricePerUnit||'';
+    });
+  });
+
+  document.querySelectorAll('.deleteListingBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      if(!confirm('Delete this listing?')) return;
+      const row=this.closest('tr');
+      fetch(row.dataset.deleteUrl+'/'+row.dataset.id,{method:'GET',headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+        .then(()=>location.reload()).catch(()=>alert('Delete failed'));
+    });
+  });
+
+  document.getElementById('editListingForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    const id=this.id.value;
+    const data=new FormData(this); data.delete('id');
+    fetch('/listings/update/'+id,{method:'POST',body:data,headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+      .then(()=>{ closeModal('editListingModal'); location.reload(); })
+      .catch(()=>alert('Update failed'));
+  });
+
+  document.querySelectorAll('.modal').forEach(m=>{ m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); }); });
+</script>
+{% endblock %}
