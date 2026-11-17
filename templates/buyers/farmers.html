@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Farmers{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-user-farmer"></i>
+    <h1>Farmers</h1>
+    <p>View and select farmers to buy from</p>
+  </div>
+  {% if query %}
+    <form method="GET" action="{{ url_for('buyer.farmers') }}" class="form-grid" style="padding:1rem 0;">
+      <div class="form-group">
+        <label>Search farmers</label>
+        <input type="text" name="q" value="{{ query }}" placeholder="Farmer name, district...">
+      </div>
+      <div class="form-group" style="align-self:end;">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+      </div>
+    </form>
+  {% endif %}
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Location</th>
+          <th>Main Crops</th>
+          <th>Rating</th>
+          <th class="text-center">Contact</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in farmers %}
+        <tr>
+          <td><strong>{{ f.fullName }}</strong></td>
+          <td>{{ f.phone or '-' }}</td>
+          <td>{{ f.district or '-' }}, {{ f.village or '-' }}</td>
+          <td>
+            {% if f.mainCrops %}
+              {% for c in f.mainCrops %}<span class="chip chip-small">{{ c }}</span>{% endfor %}
+            {% else %}<span class="text-muted">-</span>{% endif %}
+          </td>
+          <td>
+            <span class="rating-stars">{{ '★' * (f.rating | int) }}{{ '☆' * (5 - (f.rating | int)) }}</span>
+            <span class="text-muted">{{ '%.1f'|format(f.rating) }}</span>
+          </td>
+          <td class="text-center">
+            {% if f.phone %}
+              <a href="tel:{{ f.phone }}" class="btn btn-sm btn-info"><i class="fas fa-phone"></i> Call</a>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">No farmers found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
