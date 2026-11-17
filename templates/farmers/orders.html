@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-shopping-cart"></i>
+    <h1>My Orders</h1>
+    <p>Orders placed by buyers for your produce</p>
+  </div>
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Crop</th>
+          <th>Buyer</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        {% set buyer_obj = buyers | selectattr('_id', 'equalto', o.buyerId) | list | first if buyers else none %}
+        {% set buyer_name = buyer_obj.businessName if buyer_obj else 'Unknown Buyer' %}
+        {% set buyer_phone = buyer_obj.phone if buyer_obj else '' %}
+        <tr>
+          <td><strong>{{ o._id | string | truncate(8, end='') }}</strong></td>
+          <td>{{ o.cropNameSnapshot or 'Produce' }}</td>
+          <td>{{ buyer_name }}</td>
+          <td>{{ o.quantityOrdered }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(o.totalPrice) }}</span></td>
+          <td>
+            {% if o.paymentStatus == 'Paid' %}
+              <span class="badge badge-Paid">Paid</span>
+            {% else %}
+              <span class="badge badge-Unpaid">Unpaid</span>
+              <form method="POST" action="{{ url_for('farmer.pay_order', id=o._id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-credit-card"></i> Mark Paid</button>
+              </form>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-{{ o.orderStatus }}">{{ o.orderStatus }}</span></td>
+          <td class="text-center">
+            {% if o.orderStatus == "Pending" %}
+              <div class="order-actions">
+                <a href="{{ url_for('farmer.approve_order', id=o._id) }}" class="btn btn-sm btn-success">Approve</a>
+                <a href="{{ url_for('farmer.reject_order', id=o._id) }}" class="btn btn-sm btn-danger">Reject</a>
+              </div>
+            {% elif o.orderStatus == "Approved" %}
+              <button class="btn btn-sm btn-info replyBtn" data-id="{{ o._id }}"><i class="fas fa-reply"></i> Notify Delivery</button>
+            {% elif o.orderStatus == "In Transit" %}
+              <a href="{{ url_for('farmer.complete_order', id=o._id) }}" class="btn btn-sm btn-info">Mark Completed</a>
+            {% elif o.orderStatus == "Delivered" %}
+              <a href="{{ url_for('farmer.complete_order', id=o._id) }}" class="btn btn-sm btn-info">Mark Completed</a>
+            {% else %}
+              <span class="badge badge-Completed">Completed</span>
+              {% if not o.reviewed %}
+                <a href="{{ url_for('farmer.add_review', order_id=o._id) }}" class="btn btn-sm btn-outline"><i class="fas fa-star"></i> Review</a>
+              {% endif %}
+            {% endif %}
+          </td>
+          {% if buyer_phone %}
+            <td class="text-center"><a href="tel:{{ buyer_phone }}" class="btn btn-sm btn-info"><i class="fas fa-phone"></i></a></td>
+          {% else %}
+            <td class="text-center"><span class="text-muted">-</span></td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">No orders yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="modal" id="replyOrderModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('replyOrderModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-reply"></i> Notify Delivery</h3>
+    </div>
+    <form method="POST" action="" class="ajax-form" id="replyForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Delivery Date <span class="req">*</span></label>
+          <input type="date" name="deliveryDate" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Place <span class="req">*</span></label>
+          <input type="text" name="deliveryPlace" placeholder="Farm / Market / Warehouse" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Time <span class="req">*</span></label>
+          <input type="time" name="deliveryTime" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Notes</label>
+          <textarea name="deliveryNotes" rows="3" placeholder="Additional instructions..."></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('replyOrderModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Send Delivery Notification</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.replyBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const id = this.dataset.id;
+      document.getElementById('replyForm').action = '/farmer/orders/reply/' + id;
+      openModal('replyOrderModal');
+    });
+  });
+</script>
+{% endblock %}
