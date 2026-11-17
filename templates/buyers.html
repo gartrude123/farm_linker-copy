@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Buyers{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-store"></i>
+    <h1>Buyers</h1>
+    <p>Urban buyers and produce processors</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addBuyerModal')">
+    <i class="fas fa-plus"></i> Add Buyer
+  </button>
+</section>
+
+<!-- Add Buyer Modal -->
+<div class="modal" id="addBuyerModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('addBuyerModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-plus"></i> Add Buyer</h3>
+    </div>
+    <form method="POST" action="{{ url_for('add_buyer') }}" class="modal-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Business Name <span class="req">*</span></label>
+          <input type="text" name="businessName" placeholder="Business Name" required>
+        </div>
+        <div class="form-group">
+          <label>Contact Person</label>
+          <input type="text" name="contactPerson" placeholder="Contact Person">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" name="phone" placeholder="+256 700 000 000">
+        </div>
+        <div class="form-group">
+          <label>Buyer Type</label>
+          <select name="buyerType">
+            <option value="">Select type</option>
+            {% for t in buyer_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" name="location" placeholder="Location">
+        </div>
+        <div class="form-group">
+          <label>Preferred Produce</label>
+          <select name="preferredProduce" multiple>
+            {% for p in produce_types %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+          </select>
+          <small class="form-hint">Hold Ctrl/Cmd to select multiple</small>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('addBuyerModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Buyer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Buyers List -->
+<div class="card">
+  <div class="card-header">
+    <span class="badge">{{ buyers|length }} buyer(s)</span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Business</th>
+          <th>Contact</th>
+          <th>Phone</th>
+          <th>Type</th>
+          <th>Location</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in buyers %}
+        <tr data-id="{{ b._id }}" data-delete-url="/buyers/delete"
+            data-business-name="{{ b.businessName|e }}" data-contact-person="{{ b.contactPerson|e }}"
+            data-phone="{{ b.phone|e }}" data-buyer-type="{{ b.buyerType or '' }}"
+            data-location="{{ b.location|e }}">
+          <td>{{ b.businessName }}</td>
+          <td>{{ b.contactPerson or '-' }}</td>
+          <td>{{ b.phone or '-' }}</td>
+          <td><span class="chip">{{ b.buyerType or '-' }}</span></td>
+          <td>{{ b.location or '-' }}</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline editBuyerBtn" title="Edit">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn btn-sm btn-danger deleteBuyerBtn" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">No buyers found. Add one to get started.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Buyer Modal -->
+<div class="modal" id="editBuyerModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('editBuyerModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-pen"></i> Edit Buyer</h3>
+    </div>
+    <form id="editBuyerForm" class="modal-form">
+      <input type="hidden" name="id" id="editBuyerId">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Business Name</label>
+          <input type="text" name="businessName" id="editBusinessName" placeholder="Business Name">
+        </div>
+        <div class="form-group">
+          <label>Contact Person</label>
+          <input type="text" name="contactPerson" id="editContactPerson" placeholder="Contact Person">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" name="phone" id="editBuyerPhone" placeholder="Phone">
+        </div>
+        <div class="form-group">
+          <label>Buyer Type</label>
+          <select name="buyerType" id="editBuyerType">
+            <option value="">Select type</option>
+            {% for t in buyer_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" name="location" id="editBuyerLocation" placeholder="Location">
+        </div>
+        <div class="form-group">
+          <label>Preferred Produce</label>
+          <select name="preferredProduce" id="editPreferredProduce" multiple>
+            {% for p in produce_types %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editBuyerModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+  document.querySelectorAll('.editBuyerBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const row=this.closest('tr');
+      openModal('editBuyerModal');
+      const form=document.getElementById('editBuyerForm');
+      form.id.value=row.dataset.id;
+      form.businessName.value=row.dataset.businessName||'';
+      form.contactPerson.value=row.dataset.contactPerson||'';
+      form.phone.value=row.dataset.phone||'';
+      form.buyerType.value=row.dataset.buyerType||'';
+      form.location.value=row.dataset.location||'';
+      const types=(row.dataset.preferredProduce||'').split(',').filter(Boolean);
+      Array.from(form.preferredProduce.options).forEach(opt=>{ opt.selected=types.includes(opt.value); });
+    });
+  });
+
+  document.querySelectorAll('.deleteBuyerBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      if(!confirm('Delete this buyer?')) return;
+      const row=this.closest('tr');
+      const id=row.dataset.id;
+      fetch(row.dataset.deleteUrl+'/'+id,{method:'GET',headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+        .then(()=>location.reload()).catch(()=>alert('Delete failed'));
+    });
+  });
+
+  document.getElementById('editBuyerForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    const id=this.id.value;
+    const data=new FormData(this); data.delete('id');
+    fetch('/buyers/update/'+id,{method:'POST',body:data,headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+      .then(()=>{ closeModal('editBuyerModal'); location.reload(); })
+      .catch(()=>alert('Update failed'));
+  });
+
+  document.querySelectorAll('.modal').forEach(m=>{ m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); }); });
+</script>
+{% endblock %}
