@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Manage Listings{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-box"></i>
+    <h1>Manage Listings</h1>
+    <p>View all produce listings on the platform</p>
+  </div>
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Category</th>
+          <th>Qty / Unit</th>
+          <th>Price</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in listings %}
+        {% set f = farmers | selectattr('_id', 'equalto', l.farmerId) | list | first if farmers else none %}
+        {% set farmer_name = f.fullName if f else 'Unknown Farmer' %}
+        <tr>
+          <td><strong>{{ l.cropName }}</strong></td>
+          <td>{{ farmer_name }}</td>
+          <td><span class="chip">{{ l.category or '-' }}</span></td>
+          <td>{{ l.quantity }} {{ l.unit }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(l.pricePerUnit) }}</span></td>
+          <td class="text-center">
+            <a href="tel:{{ f.phone if f else '' }}" class="btn btn-sm btn-info" title="Call Farmer"><i class="fas fa-phone"></i></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No listings.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
