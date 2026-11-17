@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Add Review{% endblock %}
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-star"></i>
+    <h1>Review Buyer</h1>
+    <p>Share your experience with this buyer</p>
+  </div>
+</section>
+<div class="card">
+  <div class="card-body">
+    {% if existing_review %}
+      <div class="alert alert-info">You have already reviewed this order.</div>
+    {% else %}
+    <form method="POST" class="modal-form">
+      <div class="form-group">
+        <label>Rating</label>
+        <div class="star-rating">
+          {% for i in range(1,6) %}
+            <input type="radio" name="rating" id="star{{i}}" value="{{i}}" {% if i==5 %}checked{% endif %}>
+            <label for="star{{i}}"><i class="fas fa-star"></i></label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Comment</label>
+        <textarea name="comment" rows="4" placeholder="Write your review..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit Review</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
