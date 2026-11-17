@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Farmer Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+  <a href="{{ url_for('auth.profile') }}" class="btn btn-outline btn-sm"><i class="fas fa-user-circle"></i> Profile</a>
+  <a href="{{ url_for('farmer.add_listing') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Listing</a>
+</div>
+
+<div class="welcome-section">
+  <h2>Welcome back, {{ session.user_name }}!</h2>
+  <p>Manage your produce listings, receive orders from buyers, and track deliveries.</p>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-value">{{ listings|length }}</div>
+    <div class="stat-label">Produce Listings</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ orders|length }}</div>
+    <div class="stat-label">Total Orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ pending|length }}</div>
+    <div class="stat-label">Pending Orders</div>
+  </div>
+</div>
+
+<div class="action-grid">
+  <a href="{{ url_for('farmer.add_listing') }}" class="action-card">
+    <div class="icon"><i class="fas fa-plus"></i></div>
+    <div>
+      <h3>Add Listing</h3>
+      <p>List your fresh produce for sale</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('farmer.listings') }}" class="action-card">
+    <div class="icon"><i class="fas fa-box"></i></div>
+    <div>
+      <h3>My Listings</h3>
+      <p>View and manage your produce</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('farmer.buyers') }}" class="action-card">
+    <div class="icon"><i class="fas fa-users"></i></div>
+    <div>
+      <h3>Buyers</h3>
+      <p>Connect with potential buyers</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('farmer.orders') }}" class="action-card">
+    <div class="icon"><i class="fas fa-shopping-cart"></i></div>
+    <div>
+      <h3>Orders</h3>
+      <p>Approve and manage orders</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+</div>
+
+<!-- My Produce Listings -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-box"></i> My Produce Listings</h3>
+    <a href="{{ url_for('farmer.add_listing') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Listing</a>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Category</th>
+          <th>Qty / Unit</th>
+          <th>Price</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in listings %}
+        <tr>
+          <td><strong>{{ l.cropName }}</strong></td>
+          <td><span class="chip">{{ l.category or '-' }}</span></td>
+          <td>{{ l.quantity }} {{ l.unit }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(l.pricePerUnit) }}</span></td>
+          <td class="text-center">
+            <a href="{{ url_for('farmer.edit_listing', id=l._id) }}" class="btn btn-sm btn-outline"><i class="fas fa-pen"></i></a>
+            <a href="{{ url_for('farmer.delete_listing', id=l._id) }}" class="btn btn-sm btn-danger deleteBtn"><i class="fas fa-trash"></i></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">No listings yet. Add your first produce listing.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Orders -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-shopping-cart"></i> Orders</h3>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Buyer</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        {% set buyer = namespace(name='Unknown') %}
+        {% set buyer_obj = buyers | selectattr('_id', 'equalto', o.buyerId) | list | first if buyers else none %}
+        {% set buyer_name = buyer_obj.businessName if buyer_obj else 'Unknown Buyer' %}
+        <tr>
+          <td>{{ o.cropNameSnapshot or 'Produce' }}</td>
+          <td>{{ buyer_name }}</td>
+          <td>{{ o.quantityOrdered }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(o.totalPrice) }}</span></td>
+          <td><span class="badge badge-{{ o.orderStatus }}">{{ o.orderStatus }}</span></td>
+          <td class="text-center">
+            {% if o.orderStatus == "Pending" %}
+              <a href="{{ url_for('farmer.approve_order', id=o._id) }}" class="btn btn-sm btn-success">Approve</a>
+              <a href="{{ url_for('farmer.reject_order', id=o._id) }}" class="btn btn-sm btn-danger">Reject</a>
+            {% elif o.orderStatus == "Approved" %}
+              <button class="btn btn-sm btn-info replyBtn" data-id="{{ o._id }}"><i class="fas fa-reply"></i> Reply/Delivery</button>
+            {% elif o.orderStatus == "In Transit" %}
+              <a href="{{ url_for('farmer.complete_order', id=o._id) }}" class="btn btn-sm btn-info">Mark Completed</a>
+            {% else %}
+              <span class="badge badge-Completed">Completed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No orders yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Reply / Delivery Notification Modal -->
+<div class="modal" id="replyOrderModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('replyOrderModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-reply"></i> Notify Delivery</h3>
+    </div>
+    <form method="POST" action="" class="ajax-form" id="replyForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token() else '' }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Delivery Date <span class="req">*</span></label>
+          <input type="date" name="deliveryDate" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Place <span class="req">*</span></label>
+          <input type="text" name="deliveryPlace" placeholder="Farm / Market / Warehouse" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Time <span class="req">*</span></label>
+          <input type="time" name="deliveryTime" required>
+        </div>
+        <div class="form-group">
+          <label>Delivery Notes</label>
+          <textarea name="deliveryNotes" rows="3" placeholder="Additional instructions..."></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('replyOrderModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Send Delivery Notification</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.replyBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const id = this.dataset.id;
+      document.getElementById('replyForm').action = '/farmer/orders/reply/' + id;
+      openModal('replyOrderModal');
+    });
+  });
+</script>
+{% endblock %}
