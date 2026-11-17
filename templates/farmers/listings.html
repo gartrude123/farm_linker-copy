@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}My Listings{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-box"></i>
+    <h1>My Produce Listings</h1>
+    <p>Manage your produce available for sale</p>
+  </div>
+  <a href="{{ url_for('farmer.add_listing') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Listing</a>
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Category</th>
+          <th>Qty / Unit</th>
+          <th>Price</th>
+          <th>Date Added</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in listings %}
+        <tr>
+          <td><strong>{{ l.cropName }}</strong></td>
+          <td><span class="chip">{{ l.category or '-' }}</span></td>
+          <td>{{ l.quantity }} {{ l.unit }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(l.pricePerUnit) }}</span></td>
+          <td>{{ l.createdAt.strftime('%Y-%m-%d') if l.createdAt else '-' }}</td>
+          <td class="text-center">
+            <a href="{{ url_for('farmer.edit_listing', id=l._id) }}" class="btn btn-sm btn-outline"><i class="fas fa-pen"></i> Edit</a>
+            <a href="{{ url_for('farmer.delete_listing', id=l._id) }}" class="btn btn-sm btn-danger deleteBtn"><i class="fas fa-trash"></i> Delete</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No listings yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
