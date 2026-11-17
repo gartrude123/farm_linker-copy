@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Admin Setup{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card" style="max-width: 440px; margin: 0 auto;">
+    <div class="auth-header">
+      <i class="fas fa-shield-alt"></i>
+      <h1>Admin Setup</h1>
+      <p>Create the first administrator account for Farm Linker.</p>
+    </div>
+    <div class="auth-form" style="padding: 1.75rem;">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, msg in messages %}
+            <div class="flash flash-{{ category }}" role="alert">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      <form method="POST" action="{{ url_for('admin.setup') }}" novalidate>
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Admin Email <span class="req">*</span></label>
+          <input type="email" name="email" placeholder="admin@farmlinker.com" required>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Full Name <span class="req">*</span></label>
+          <input type="text" name="full_name" placeholder="System Administrator" required>
+        </div>
+        <div class="form-group password-field">
+          <label><i class="fas fa-lock"></i> Password <span class="req">*</span></label>
+          <input type="password" name="password" placeholder="••••••••" required minlength="6">
+          <button type="button" class="password-toggle" id="toggleSetupPwd" aria-label="Toggle password visibility">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create Admin Account</button>
+      </form>
+      <div class="auth-footer" style="background:transparent; border-top:none; padding-top:0; text-align:center;">
+        Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const toggle = document.getElementById('toggleSetupPwd');
+  const pwdInput = document.querySelector('input[name="password"]');
+  toggle.addEventListener('click', function() {
+    const isPassword = pwdInput.type === 'password';
+    pwdInput.type = isPassword ? 'text' : 'password';
+    this.querySelector('i').classList.toggle('fa-eye');
+    this.querySelector('i').classList.toggle('fa-eye-slash');
+  });
+</script>
+{% endblock %}
