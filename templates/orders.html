@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-shopping-cart"></i>
+    <h1>Orders</h1>
+    <p>View all orders</p>
+  </div>
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Buyer</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        {% set f = farmers | selectattr('_id', 'equalto', o.farmerId) | list | first if farmers else none %}
+        {% set b = buyers | selectattr('_id', 'equalto', o.buyerId) | list | first if buyers else none %}
+        {% set farmer_name = f.fullName if f else 'Unknown' %}
+        {% set buyer_name = b.businessName if b else 'Unknown' %}
+        <tr>
+          <td><strong>{{ o._id | string | truncate(8, end='') }}</strong></td>
+          <td>{{ o.cropNameSnapshot or 'Produce' }}</td>
+          <td>{{ farmer_name }}</td>
+          <td>{{ buyer_name }}</td>
+          <td>{{ o.quantityOrdered }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(o.totalPrice) }}</span></td>
+          <td><span class="badge badge-{{ o.orderStatus }}">{{ o.orderStatus }}</span></td>
+          <td class="text-center">
+            {% if o.orderStatus == "Pending" and session.user_role == "farmer" %}
+              <a href="{{ url_for('farmer.approve_order', id=o._id) }}" class="btn btn-sm btn-success">Approve</a>
+              <a href="{{ url_for('farmer.reject_order', id=o._id) }}" class="btn btn-sm btn-danger">Reject</a>
+            {% elif o.orderStatus == "In Transit" and session.user_role == "buyer" %}
+              <a href="{{ url_for('buyer.confirm_delivery', id=o._id) }}" class="btn btn-sm btn-success">Confirm Delivery</a>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">No orders.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
