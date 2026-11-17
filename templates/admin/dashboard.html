@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block page_actions %}
+  <div class="page-actions">
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+  <h2>Admin Control Panel</h2>
+  <p>Monitor and manage all farmer and buyer accounts on Farm Linker.</p>
+</div>
+
+{% if pending_replacement %}
+<div class="flash flash-warning" role="alert" style="margin-bottom: 1rem;">
+  <span class="flash-icon"><i class="fas fa-exclamation-triangle"></i></span>
+  <strong>Pending Admin Replacement Request</strong><br>
+  {{ pending_replacement.fullName }} ({{ pending_replacement.email }}) is requesting to replace your administrator account.
+  <br>
+  <a href="{{ url_for('admin.approve_admin_replacement') }}" class="btn btn-sm btn-success" onclick="return confirm('Approve this admin replacement? The current admin account will be replaced.')"><i class="fas fa-check"></i> Approve</a>
+  <a href="{{ url_for('admin.deny_admin_replacement') }}" class="btn btn-sm btn-danger" onclick="return confirm('Deny this admin replacement request?')"><i class="fas fa-times"></i> Deny</a>
+</div>
+{% endif %}
+
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.farmers }}</div>
+    <div class="stat-label">Farmers</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.buyers }}</div>
+    <div class="stat-label">Buyers</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.listings }}</div>
+    <div class="stat-label">Produce Listings</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.orders }}</div>
+    <div class="stat-label">Total Orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.pending_orders }}</div>
+    <div class="stat-label">Pending Orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.completed_orders }}</div>
+    <div class="stat-label">Completed Orders</div>
+  </div>
+</div>
+
+<div class="action-grid">
+  <a href="{{ url_for('admin.farmers') }}" class="action-card">
+    <div class="icon"><i class="fas fa-user-farmer"></i></div>
+    <div>
+      <h3>Manage Farmers</h3>
+      <p>Verify, activate, suspend, block</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('admin.buyers') }}" class="action-card">
+    <div class="icon"><i class="fas fa-users"></i></div>
+    <div>
+      <h3>Manage Buyers</h3>
+      <p>Activate, suspend, block accounts</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('admin.listings') }}" class="action-card">
+    <div class="icon"><i class="fas fa-box"></i></div>
+    <div>
+      <h3>Manage Listings</h3>
+      <p>View all produce listings</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('admin.orders') }}" class="action-card">
+    <div class="icon"><i class="fas fa-shopping-cart"></i></div>
+    <div>
+      <h3>Manage Orders</h3>
+      <p>View all platform orders</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('admin.reviews') }}" class="action-card">
+    <div class="icon"><i class="fas fa-comment-dots"></i></div>
+    <div>
+      <h3>Manage Reviews</h3>
+      <p>View all user reviews</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+</div>
+{% endblock %}
