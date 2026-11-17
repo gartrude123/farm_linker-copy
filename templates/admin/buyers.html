@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Manage Buyers{% endblock %}
+
+{% block page_actions %}
+  <div class="page-actions">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+  </div>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+  <h2>Manage Buyers</h2>
+  <p>View, activate, suspend, or block all buyer accounts.</p>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Business Name</th>
+          <th>Contact Person</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Type</th>
+          <th>Account Status</th>
+          <th>Rating</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in buyers %}
+        <tr>
+          <td><strong>{{ b.businessName }}</strong></td>
+          <td>{{ b.contactPerson or '-' }}</td>
+          <td>{{ b.email or '-' }}</td>
+          <td>{{ b.phone or '-' }}</td>
+          <td><span class="chip">{{ b.buyerType or '-' }}</span></td>
+          <td>
+            {% set status = b.accountStatus or 'active' %}
+            {% if status == 'active' %}
+              <span class="badge badge-Completed">Active</span>
+            {% elif status == 'suspended' %}
+              <span class="badge badge-Pending">Suspended</span>
+            {% else %}
+              <span class="badge badge-Rejected">Blocked</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="rating-stars">{{ '★' * (b.rating | int) }}{{ '☆' * (5 - (b.rating | int)) }}</span>
+            {{ '%.1f'|format(b.rating) }}
+          </td>
+          <td class="text-center">
+            <div class="order-actions">
+              {% if status != 'active' %}
+                <a href="{{ url_for('admin.buyer_status', id=b._id, status='active') }}" class="btn btn-sm btn-success"><i class="fas fa-unlock"></i> Activate</a>
+              {% endif %}
+              {% if status != 'suspended' %}
+                <a href="{{ url_for('admin.buyer_status', id=b._id, status='suspended') }}" class="btn btn-sm btn-warning"><i class="fas fa-pause"></i> Suspend</a>
+              {% endif %}
+              {% if status != 'blocked' %}
+                <a href="{{ url_for('admin.buyer_status', id=b._id, status='blocked') }}" class="btn btn-sm btn-danger"><i class="fas fa-user-slash"></i> Block</a>
+              {% endif %}
+              <a href="tel:{{ b.phone }}" class="btn btn-sm btn-info" title="Call"><i class="fas fa-phone"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">No buyers registered.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
