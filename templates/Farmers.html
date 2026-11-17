@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Farmers{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-user-farmer"></i>
+    <h1>Farmers</h1>
+    <p>Verified smallholder farmers in our network</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addFarmerModal')">
+    <i class="fas fa-plus"></i> Add Farmer
+  </button>
+</section>
+
+<!-- Add Farmer Modal -->
+<div class="modal" id="addFarmerModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('addFarmerModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-plus"></i> Add Farmer</h3>
+    </div>
+    <form method="POST" action="{{ url_for('add_farmer') }}" class="modal-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" name="fullName" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" name="phone" placeholder="+256 700 000 000">
+        </div>
+        <div class="form-group">
+          <label>District</label>
+          <input type="text" name="district" placeholder="District">
+        </div>
+        <div class="form-group">
+          <label>Village</label>
+          <input type="text" name="village" placeholder="Village">
+        </div>
+        <div class="form-group">
+          <label>Farm Size (acres)</label>
+          <input type="number" name="farmSizeAcres" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Main Crops</label>
+          <select name="mainCrops" multiple>
+            {% for crop in crops %}
+            <option value="{{ crop }}">{{ crop }}</option>
+            {% endfor %}
+          </select>
+          <small class="form-hint">Hold Ctrl/Cmd to select multiple</small>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('addFarmerModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Farmer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Farmers List -->
+<div class="card">
+  <div class="card-header">
+    <span class="badge">{{ farmers|length }} farmer(s)</span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Location</th>
+          <th>Crops</th>
+          <th>Farm Size</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in farmers %}
+        <tr data-id="{{ f._id }}" data-delete-url="/farmers/delete"
+            data-full-name="{{ f.fullName|e }}" data-phone="{{ f.phone|e }}"
+            data-district="{{ f.district|e }}" data-village="{{ f.village|e }}"
+            data-farm-size-acres="{{ f.farmSizeAcres or '' }}"
+            data-main-crops="{{ f.mainCrops|join(',')|e }}">
+          <td>{{ f.fullName }}</td>
+          <td>{{ f.phone or '-' }}</td>
+          <td>
+            <span class="chip">{{ f.district or '-' }}</span>
+            {% if f.village %}<span class="chip chip-small">{{ f.village }}</span>{% endif %}
+          </td>
+          <td>
+            {% if f.mainCrops %}
+              {% for c in f.mainCrops[:3] %}<span class="chip chip-small">{{ c }}</span>{% endfor %}
+              {% if f.mainCrops|length > 3 %}<span class="chip chip-small">+{{ f.mainCrops|length - 3 }}</span>{% endif %}
+            {% else %}<span class="text-muted">-</span>{% endif %}
+          </td>
+          <td>{{ f.farmSizeAcres or '-' }} ac</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline editBtn" title="Edit">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn btn-sm btn-danger deleteBtn" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">No farmers found. Add one to get started.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Farmer Modal -->
+<div class="modal" id="editFarmerModal">
+  <div class="modal-content modal-lg">
+    <button class="close" onclick="closeModal('editFarmerModal')">&times;</button>
+    <div class="modal-header">
+      <h3><i class="fas fa-pen"></i> Edit Farmer</h3>
+    </div>
+    <form id="editFarmerForm" class="modal-form">
+      <input type="hidden" name="id" id="editId">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="fullName" id="editFullName" placeholder="Full Name">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" name="phone" id="editPhone" placeholder="Phone">
+        </div>
+        <div class="form-group">
+          <label>District</label>
+          <input type="text" name="district" id="editDistrict" placeholder="District">
+        </div>
+        <div class="form-group">
+          <label>Village</label>
+          <input type="text" name="village" id="editVillage" placeholder="Village">
+        </div>
+        <div class="form-group">
+          <label>Farm Size (acres)</label>
+          <input type="number" name="farmSizeAcres" id="editFarmSize" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Main Crops</label>
+          <select name="mainCrops" id="editMainCrops" multiple>
+            {% for crop in crops %}
+            <option value="{{ crop }}">{{ crop }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Rating (0-5)</label>
+          <input type="number" name="rating" id="editRating" placeholder="0" min="0" max="5">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editFarmerModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+  // Edit button: fill form from row data attributes
+  document.querySelectorAll('.editBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const row=this.closest('tr');
+      openModal('editFarmerModal');
+      const form=document.getElementById('editFarmerForm');
+      form.id.value=row.dataset.id;
+      form.fullName.value=row.dataset.fullName||'';
+      form.phone.value=row.dataset.phone||'';
+      form.district.value=row.dataset.district||'';
+      form.village.value=row.dataset.village||'';
+      form.farmSizeAcres.value=row.dataset.farmSizeAcres||'';
+      form.rating.value=row.dataset.rating||'';
+      // crops multi-select
+      const crops=(row.dataset.mainCrops||'').split(',').filter(Boolean);
+      Array.from(form.mainCrops.options).forEach(opt=>{
+        opt.selected=crops.includes(opt.value);
+      });
+    });
+  });
+
+  // Delete via fetch
+  document.querySelectorAll('.deleteBtn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      if(!confirm('Delete this farmer?')) return;
+      const row=this.closest('tr');
+      const id=row.dataset.id;
+      const url=row.dataset.deleteUrl+'/'+id;
+      fetch(url,{method:'GET',headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+        .then(()=>location.reload())
+        .catch(()=>alert('Delete failed'));
+    });
+  });
+
+  // Edit form submit via fetch
+  document.getElementById('editFarmerForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const id=this.id.value;
+    const data=new FormData(this);
+    data.delete('id');
+    fetch('/farmers/update/'+id,{method:'POST',body:data,headers:{'X-CSRF-Token':'{{ csrf_token }}'}})
+      .then(()=>{ closeModal('editFarmerModal'); location.reload(); })
+      .catch(()=>alert('Update failed'));
+  });
+
+  // Close modal on backdrop click
+  document.querySelectorAll('.modal').forEach(m=>{
+    m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); });
+  });
+</script>
+{% endblock %}
