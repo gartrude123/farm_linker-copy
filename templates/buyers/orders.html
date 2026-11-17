@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-shopping-cart"></i>
+    <h1>My Orders</h1>
+    <p>Track your orders and deliveries</p>
+  </div>
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        {% set f = farmers | selectattr('_id', 'equalto', o.farmerId) | list | first if farmers else none %}
+        {% set farmer_name = f.fullName if f else 'Unknown Farmer' %}
+        {% set farmer_phone = f.phone if f else '' %}
+        <tr>
+          <td><strong>{{ o._id | string | truncate(8, end='') }}</strong></td>
+          <td>{{ o.cropNameSnapshot or 'Produce' }}</td>
+          <td>{{ farmer_name }}</td>
+          <td>{{ o.quantityOrdered }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(o.totalPrice) }}</span></td>
+          <td>
+            {% if o.paymentStatus == 'Paid' %}
+              <span class="badge badge-Paid">Paid</span>
+            {% else %}
+              <span class="badge badge-Unpaid">Unpaid</span>
+              <form method="POST" action="{{ url_for('buyer.pay_order', id=o._id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-credit-card"></i> Pay</button>
+              </form>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-{{ o.orderStatus }}">{{ o.orderStatus }}</span></td>
+          <td class="text-center">
+            {% if o.orderStatus == "Pending" %}
+              <div class="order-actions">
+                <a href="{{ url_for('buyer.edit_order', id=o._id) }}" class="btn btn-sm btn-outline"><i class="fas fa-pen"></i> Edit</a>
+                <a href="{{ url_for('buyer.cancel_order', id=o._id) }}" class="btn btn-sm btn-danger deleteBtn">Cancel</a>
+              </div>
+            {% elif o.orderStatus == "Approved" %}
+              <span class="text-muted">Awaiting delivery notification</span>
+            {% elif o.orderStatus == "In Transit" %}
+              <a href="{{ url_for('buyer.confirm_delivery', id=o._id) }}" class="btn btn-sm btn-success">Confirm Delivery</a>
+            {% elif o.orderStatus == "Delivered" %}
+              <span class="text-muted">Awaiting completion</span>
+            {% else %}
+              <span class="badge badge-Completed">Completed</span>
+              {% if not o.reviewed %}
+                <a href="{{ url_for('buyer.add_review', order_id=o._id) }}" class="btn btn-sm btn-outline"><i class="fas fa-star"></i> Review</a>
+              {% endif %}
+            {% endif %}
+          </td>
+          {% if farmer_phone %}
+            <td class="text-center"><a href="tel:{{ farmer_phone }}" class="btn btn-sm btn-info"><i class="fas fa-phone"></i></a></td>
+          {% else %}
+            <td class="text-center"><span class="text-muted">-</span></td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">No orders yet. Browse listings and place your first order.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
