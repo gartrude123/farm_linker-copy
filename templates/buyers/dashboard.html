@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Buyer Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+  <a href="{{ url_for('auth.profile') }}" class="btn btn-outline btn-sm"><i class="fas fa-user-circle"></i> Profile</a>
+  <a href="{{ url_for('buyer.listings') }}" class="btn btn-primary btn-sm"><i class="fas fa-box"></i> Browse Produce</a>
+</div>
+
+<div class="welcome-section">
+  <h2>Welcome back, {{ session.user_name }}!</h2>
+  <p>Browse fresh produce from local farmers, place orders, and track your deliveries.</p>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-value">{{ listings|length }}</div>
+    <div class="stat-label">Available Listings</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ orders|length }}</div>
+    <div class="stat-label">Total Orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ active|length }}</div>
+    <div class="stat-label">Active Orders</div>
+  </div>
+</div>
+
+<div class="action-grid">
+  <a href="{{ url_for('buyer.listings') }}" class="action-card">
+    <div class="icon"><i class="fas fa-box"></i></div>
+    <div>
+      <h3>Browse Produce</h3>
+      <p>View fresh produce from local farmers</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('buyer.farmers') }}" class="action-card">
+    <div class="icon"><i class="fas fa-user-farmer"></i></div>
+    <div>
+      <h3>Farmers</h3>
+      <p>Connect with local suppliers</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('buyer.orders') }}" class="action-card">
+    <div class="icon"><i class="fas fa-shopping-cart"></i></div>
+    <div>
+      <h3>My Orders</h3>
+      <p>Track orders and deliveries</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+  <a href="{{ url_for('auth.profile') }}" class="action-card">
+    <div class="icon"><i class="fas fa-user-circle"></i></div>
+    <div>
+      <h3>Profile</h3>
+      <p>Manage your account details</p>
+    </div>
+    <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+  </a>
+</div>
+
+<!-- Featured Listings -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-box"></i> Available Produce Listings</h3>
+    <a href="{{ url_for('buyer.listings') }}" class="btn btn-outline btn-sm">View All Listings</a>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Category</th>
+          <th>Qty / Unit</th>
+          <th>Price</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in listings[:8] %}
+        {% set f = farmers | selectattr('_id', 'equalto', l.farmerId) | list | first if farmers else none %}
+        {% set farmer_name = f.fullName if f else 'Unknown Farmer' %}
+        <tr>
+          <td><strong>{{ l.cropName }}</strong></td>
+          <td>{{ farmer_name }}</td>
+          <td><span class="chip">{{ l.category or '-' }}</span></td>
+          <td>{{ l.quantity }} {{ l.unit }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(l.pricePerUnit) }}</span></td>
+          <td class="text-center">
+            <a href="{{ url_for('buyer.create_order') }}?listing={{ l._id }}" class="btn btn-sm btn-primary"><i class="fas fa-shopping-cart"></i> Order</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No listings available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- My Active Orders -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-shopping-cart"></i> My Orders</h3>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Farmer</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders[:8] %}
+        {% set f = farmers | selectattr('_id', 'equalto', o.farmerId) | list | first if farmers else none %}
+        {% set farmer_name = f.fullName if f else 'Unknown Farmer' %}
+        {% set farmer_phone = f.phone if f else '' %}
+        <tr>
+          <td>{{ o.cropNameSnapshot or 'Produce' }}</td>
+          <td>{{ farmer_name }}</td>
+          <td>{{ o.quantityOrdered }}</td>
+          <td><span class="price">UGX {{ '%.0f'|format(o.totalPrice) }}</span></td>
+          <td><span class="badge badge-{{ o.orderStatus }}">{{ o.orderStatus }}</span></td>
+          <td class="text-center">
+            {% if o.orderStatus == "Pending" %}
+              <a href="{{ url_for('buyer.edit_order', id=o._id) }}" class="btn btn-sm btn-outline"><i class="fas fa-pen"></i> Edit</a>
+              <a href="{{ url_for('buyer.cancel_order', id=o._id) }}" class="btn btn-sm btn-danger deleteBtn">Cancel</a>
+            {% elif o.orderStatus == "In Transit" %}
+              <a href="{{ url_for('buyer.confirm_delivery', id=o._id) }}" class="btn btn-sm btn-success">Confirm Delivery</a>
+            {% else %}
+              <span class="badge badge-{{ o.orderStatus }}">{{ o.orderStatus }}</span>
+            {% endif %}
+          </td>
+          {% if farmer_phone %}
+            <td class="text-center"><a href="tel:{{ farmer_phone }}" class="btn btn-sm btn-info"><i class="fas fa-phone"></i></a></td>
+          {% else %}
+            <td class="text-center"><span class="text-muted">-</span></td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">No orders yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
