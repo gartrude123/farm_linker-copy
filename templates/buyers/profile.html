@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-user"></i>
+    <h1>My Profile</h1>
+    <p>Manage your account details</p>
+  </div>
+</section>
+<div class="card">
+  <div class="card-body">
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="profile-info">
+          <h2>{{ user.businessName or user.fullName }}</h2>
+          <p><strong>Buyer</strong> &bull; Member since {{ user.createdAt.strftime('%B %Y') if user.createdAt else 'N/A' }}</p>
+        </div>
+      </div>
+      <div class="profile-grid">
+        <div class="profile-row">
+          <span class="label">Business Name</span>
+          <span class="value">{{ user.businessName or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Contact Person</span>
+          <span class="value">{{ user.contactPerson or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Phone</span>
+          <span class="value">{{ user.phone or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Buyer Type</span>
+          <span class="value">{{ user.buyerType or '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Preferred Produce</span>
+          <span class="value">{{ user.preferredProduce | join(', ') if user.preferredProduce else '-' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Rating</span>
+          <span class="value">
+            <span class="rating-stars">{{ '★' * (user.rating | int) }}{{ '☆' * (5 - (user.rating | int)) }}</span>
+            {{ '%.1f'|format(user.rating) }} ({{ user.reviewsCount }} reviews)
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
