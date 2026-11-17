@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Place Order{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-shopping-cart"></i>
+    <h1>Place Order</h1>
+    <p>Select a farmer and place your order</p>
+  </div>
+</section>
+
+<div class="card">
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('buyer.create_order') }}" class="ajax-form">
+      <input type="hidden" name="listingId" id="listingId" value="{{ request.args.get('listing', '') }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Select Farmer <span class="req">*</span></label>
+          <select name="farmerId" id="farmerSelect" required>
+            <option value="">Choose a farmer</option>
+            {% for f in farmers %}
+            <option value="{{ f._id }}">{{ f.fullName }} ({{ f.district or 'N/A' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Select Produce Listing <span class="req">*</span></label>
+          <select name="listingId" id="listingSelect" required>
+            <option value="">Choose a listing</option>
+            {% for l in listings %}
+            {% set f = farmers | selectattr('_id', 'equalto', l.farmerId) | list | first if farmers else none %}
+            <option value="{{ l._id }}" data-farmer="{{ f._id if f else '' }}">{{ l.cropName }} - {{ l.quantity }} {{ l.unit }} @ UX {{ '%.0f'|format(l.pricePerUnit) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity Ordered</label>
+          <input type="number" name="quantityOrdered" placeholder="0" min="0" step="0.1" required>
+        </div>
+        <div class="form-group">
+          <label>Total Price</label>
+          <input type="number" name="totalPrice" placeholder="0.00" min="0" step="0.01" readonly>
+        </div>
+        <div class="form-group">
+          <label>Payment Method <span class="req">*</span></label>
+          <select name="paymentMethod" required>
+            <option value="">Select payment method</option>
+            <option value="MTN MoMo">MTN MoMo</option>
+            <option value="Airtel Money">Airtel Money</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment Date</label>
+          <input type="date" name="paymentDate">
+        </div>
+        <div class="form-group">
+          <label>Delivery Method</label>
+          <select name="deliveryMethod">
+            <option value="Pickup">Pickup</option>
+            <option value="Delivery">Delivery</option>
+            <option value="Courier">Courier</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions" style="border-top:none; background:transparent; padding-top:0;">
+        <a href="{{ url_for('buyer.listings') }}" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary">Place Order</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('listingSelect').addEventListener('change', function(){
+    const farmerId = this.options[this.selectedIndex].dataset.farmer;
+    const farmerSelect = document.getElementById('farmerSelect');
+    if (farmerId) farmerSelect.value = farmerId;
+    // Auto-calculate total
+    const qty = document.querySelector('input[name="quantityOrdered"]');
+    const total = document.querySelector('input[name="totalPrice"]');
+    const option = this.options[this.selectedIndex];
+    const priceText = option.textContent.match(/@ UX ([\d,]+)/);
+    if (priceText && qty) {
+      const price = parseFloat(priceText[1].replace(/,/g, ''));
+      qty.addEventListener('input', function(){
+        total.value = (price * parseFloat(qty.value || 0)).toFixed(2);
+      });
+    }
+  });
+</script>
+{% endblock %}
