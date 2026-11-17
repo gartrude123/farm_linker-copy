@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Buyers{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="page-title">
+    <i class="fas fa-users"></i>
+    <h1>Buyers</h1>
+    <p>View and connect with buyers in the network</p>
+  </div>
+  {% if query %}
+    <form method="GET" action="{{ url_for('farmer.buyers') }}" class="form-grid" style="padding:1rem 0;">
+      <div class="form-group">
+        <label>Search buyers</label>
+        <input type="text" name="q" value="{{ query }}" placeholder="Business name, contact person...">
+      </div>
+      <div class="form-group" style="align-self:end;">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+      </div>
+    </form>
+  {% endif %}
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Business Name</th>
+          <th>Contact Person</th>
+          <th>Phone</th>
+          <th>Type</th>
+          <th class="text-center">Contact</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in buyers %}
+        <tr>
+          <td><strong>{{ b.businessName }}</strong></td>
+          <td>{{ b.contactPerson or '-' }}</td>
+          <td>{{ b.phone or '-' }}</td>
+          <td><span class="chip">{{ b.buyerType or '-' }}</span></td>
+          <td class="text-center">
+            {% if b.phone %}
+              <a href="tel:{{ b.phone }}" class="btn btn-sm btn-info"><i class="fas fa-phone"></i> Call</a>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-4">No buyers found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
